@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">PressingDZ</string>
+    <string name="filter_all">Tous</string>
+    <string name="status_recu">Reçu</string>
+    <string name="status_pret">Prêt</string>
+    <string name="status_livre">Livré</string>
+    <string name="new_ticket">Nouveau ticket</string>
+    <string name="new_ticket_cd">Nouveau ticket</string>
+    <string name="field_client">Client *</string>
+    <string name="field_phone">Téléphone</string>
+    <string name="field_items">Articles * (ex: 3 chemises)</string>
+    <string name="field_price">Prix DZD *</string>
+    <string name="action_create">Créer</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_collect">Encaisser</string>
+    <string name="label_paid">payé</string>
+    <string name="action_delete_cd">Supprimer</string>
+    <string name="label_deposit">Dépôt</string>
+    <string name="label_ready">Prêt</string>
+    <string name="err_client_required">Nom du client requis</string>
+    <string name="err_items_required">Articles requis</string>
+    <string name="err_price_positive">Le prix doit être positif</string>
+    <string name="err_price_too_large">Prix trop élevé</string>
+</resources>

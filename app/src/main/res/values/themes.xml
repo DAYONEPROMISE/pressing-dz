@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.PressingDZ" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#00000000</item>
+    </style>
+</resources>

@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">PressingDZ</string>
+    <string name="filter_all">الكل</string>
+    <string name="status_recu">تم الاستلام</string>
+    <string name="status_pret">جاهز</string>
+    <string name="status_livre">تم التسليم</string>
+    <string name="new_ticket">تذكرة جديدة</string>
+    <string name="new_ticket_cd">تذكرة جديدة</string>
+    <string name="field_client">الزبون *</string>
+    <string name="field_phone">الهاتف</string>
+    <string name="field_items">الملابس * (مثال: 3 قمصان)</string>
+    <string name="field_price">السعر دج *</string>
+    <string name="action_create">إنشاء</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_collect">تحصيل</string>
+    <string name="label_paid">مدفوع</string>
+    <string name="action_delete_cd">حذف</string>
+    <string name="label_deposit">الإيداع</string>
+    <string name="label_ready">جاهز</string>
+    <string name="err_client_required">اسم الزبون مطلوب</string>
+    <string name="err_items_required">الملابس مطلوبة</string>
+    <string name="err_price_positive">يجب أن يكون السعر موجبا</string>
+    <string name="err_price_too_large">السعر مرتفع جدا</string>
+</resources>
