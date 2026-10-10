@@ -17,6 +17,7 @@
     <string name="action_delete_cd">حذف</string>
     <string name="label_deposit">الإيداع</string>
     <string name="label_ready">جاهز</string>
+    <string name="detail_hint">اختر تذكرة لعرض التفاصيل</string>
     <string name="err_client_required">اسم الزبون مطلوب</string>
     <string name="err_items_required">الملابس مطلوبة</string>
     <string name="err_price_positive">يجب أن يكون السعر موجبا</string>

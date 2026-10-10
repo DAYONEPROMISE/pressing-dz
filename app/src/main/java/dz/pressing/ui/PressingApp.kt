@@ -1,6 +1,7 @@
 package dz.pressing.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -35,11 +37,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dz.pressing.R
+import dz.pressing.data.Ticket
 import dz.pressing.data.TicketLogic
 import dz.pressing.data.TicketStatus
 import java.text.SimpleDateFormat
@@ -63,17 +67,23 @@ fun errorLabel(code: String): String = when (code) {
     else -> code
 }
 
+@Composable
+private fun dateFmt(): SimpleDateFormat =
+    remember { SimpleDateFormat("dd/MM HH:mm", Locale.FRANCE) }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PressingApp(vm: TicketViewModel = viewModel()) {
     val tickets by vm.tickets.collectAsState()
     var showAdd by remember { mutableStateOf(false) }
     var formError by remember { mutableStateOf<String?>(null) }
+    var selectedId by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(Unit) { vm.refreshTakings() }
 
     val visible = remember(tickets, vm.filter) {
         if (vm.filter == null) tickets else tickets.filter { it.status == vm.filter }
     }
+    val selected = visible.firstOrNull { it.id == selectedId } ?: visible.firstOrNull()
 
     Scaffold(
         topBar = {
@@ -93,37 +103,25 @@ fun PressingApp(vm: TicketViewModel = viewModel()) {
                 FilterChip(selected = vm.filter == TicketStatus.LIVRE, onClick = { vm.filter = TicketStatus.LIVRE }, label = { Text(stringResource(R.string.status_livre)) })
             }
             Spacer(Modifier.height(8.dp))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(visible, key = { it.id }) { t ->
-                    val df = remember { SimpleDateFormat("dd/MM HH:mm", Locale.FRANCE) }
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(12.dp)) {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("#${t.id} ${t.clientName}", style = MaterialTheme.typography.titleMedium)
-                                Text(TicketLogic.formatDzd(t.priceDzd), style = MaterialTheme.typography.titleMedium)
-                            }
-                            Text(t.itemsLabel)
-                            Text("${stringResource(R.string.label_deposit)}: ${df.format(Date(t.createdAt))} • ${stringResource(R.string.label_ready)}: ${df.format(Date(t.readyAt))}",
-                                style = MaterialTheme.typography.bodySmall)
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                AssistChip(onClick = {}, label = { Text(statusLabel(t.status)) })
-                                if (t.paid) AssistChip(onClick = {}, label = { Text(stringResource(R.string.label_paid)) })
-                            }
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                val next = TicketLogic.nextStatus(t.status)
-                                if (next != null) {
-                                    Button(onClick = { vm.advance(t) }) { Text("→ ${statusLabel(next)}") }
-                                }
-                                if (!t.paid) {
-                                    TextButton(onClick = { vm.markPaid(t) }) { Text(stringResource(R.string.action_collect)) }
-                                }
-                                Spacer(Modifier.weight(1f))
-                                IconButton(onClick = { vm.delete(t) }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.action_delete_cd))
-                                }
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                if (maxWidth >= 840.dp) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TicketList(visible, selected?.id, { selectedId = it }, vm,
+                            Modifier.weight(1f).fillMaxSize())
+                        if (selected != null) {
+                            TicketDetail(selected, vm, Modifier.weight(1f).fillMaxSize())
+                        } else {
+                            Column(Modifier.weight(1f).fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(stringResource(R.string.detail_hint),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
+                } else {
+                    TicketList(visible, selected?.id, { selectedId = it }, vm, Modifier.fillMaxSize())
                 }
             }
         }
@@ -157,5 +155,84 @@ fun PressingApp(vm: TicketViewModel = viewModel()) {
             },
             dismissButton = { TextButton(onClick = { showAdd = false }) { Text(stringResource(R.string.action_cancel)) } }
         )
+    }
+}
+
+@Composable
+private fun TicketList(
+    tickets: List<Ticket>,
+    selectedId: Long?,
+    onSelect: (Long) -> Unit,
+    vm: TicketViewModel,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(tickets, key = { it.id }) { t ->
+            TicketCard(t, t.id == selectedId, { onSelect(t.id) }, vm)
+        }
+    }
+}
+
+@Composable
+private fun TicketCard(t: Ticket, selected: Boolean, onSelect: () -> Unit, vm: TicketViewModel) {
+    val df = dateFmt()
+    Card(
+        onClick = onSelect,
+        modifier = Modifier.fillMaxWidth(),
+        colors = if (selected) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        else CardDefaults.cardColors()
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("#${t.id} ${t.clientName}", style = MaterialTheme.typography.titleMedium)
+                Text(TicketLogic.formatDzd(t.priceDzd), style = MaterialTheme.typography.titleMedium)
+            }
+            Text(t.itemsLabel)
+            Text("${stringResource(R.string.label_deposit)}: ${df.format(Date(t.createdAt))} • ${stringResource(R.string.label_ready)}: ${df.format(Date(t.readyAt))}",
+                style = MaterialTheme.typography.bodySmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AssistChip(onClick = {}, label = { Text(statusLabel(t.status)) })
+                if (t.paid) AssistChip(onClick = {}, label = { Text(stringResource(R.string.label_paid)) })
+            }
+            TicketActions(t, vm)
+        }
+    }
+}
+
+@Composable
+private fun TicketActions(t: Ticket, vm: TicketViewModel) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        val next = TicketLogic.nextStatus(t.status)
+        if (next != null) {
+            Button(onClick = { vm.advance(t) }) { Text("→ ${statusLabel(next)}") }
+        }
+        if (!t.paid) {
+            TextButton(onClick = { vm.markPaid(t) }) { Text(stringResource(R.string.action_collect)) }
+        }
+        Spacer(Modifier.weight(1f))
+        IconButton(onClick = { vm.delete(t) }) {
+            Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.action_delete_cd))
+        }
+    }
+}
+
+@Composable
+private fun TicketDetail(t: Ticket, vm: TicketViewModel, modifier: Modifier = Modifier) {
+    val df = dateFmt()
+    Card(modifier) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("#${t.id} ${t.clientName}", style = MaterialTheme.typography.headlineSmall)
+            Text(TicketLogic.formatDzd(t.priceDzd), style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary)
+            Text(t.itemsLabel, style = MaterialTheme.typography.bodyLarge)
+            if (t.phone.isNotBlank()) Text(t.phone, style = MaterialTheme.typography.bodyMedium)
+            Text("${stringResource(R.string.label_deposit)}: ${df.format(Date(t.createdAt))}\n${stringResource(R.string.label_ready)}: ${df.format(Date(t.readyAt))}",
+                style = MaterialTheme.typography.bodyMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AssistChip(onClick = {}, label = { Text(statusLabel(t.status)) })
+                if (t.paid) AssistChip(onClick = {}, label = { Text(stringResource(R.string.label_paid)) })
+            }
+            TicketActions(t, vm)
+        }
     }
 }

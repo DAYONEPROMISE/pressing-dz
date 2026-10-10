@@ -17,6 +17,7 @@
     <string name="action_delete_cd">Supprimer</string>
     <string name="label_deposit">Dépôt</string>
     <string name="label_ready">Prêt</string>
+    <string name="detail_hint">Sélectionnez un ticket pour le détail</string>
     <string name="err_client_required">Nom du client requis</string>
     <string name="err_items_required">Articles requis</string>
     <string name="err_price_positive">Le prix doit être positif</string>
