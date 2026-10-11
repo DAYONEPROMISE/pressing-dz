@@ -31,16 +31,37 @@ jobs:
         run: ./gradlew :app:lintDebug --stacktrace
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
-      - name: Upload APK
+      - name: Build release APK (unsigned)
+        run: ./gradlew :app:assembleRelease --stacktrace
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: pressingdz-debug
           path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: pressingdz-release
+          path: app/build/outputs/apk/release/*.apk
+      - name: Read app version
+        run: |
+          VER=$(grep -hoP 'versionName\s*=?\s*[\x27\x22]\K[0-9.]+' app/build.gradle app/build.gradle.kts 2>/dev/null | head -1)
+          CODE=$(grep -hoP 'versionCode\s*=?\s*\K[0-9]+' app/build.gradle app/build.gradle.kts 2>/dev/null | head -1)
+          echo "APP_VERSION=${VER:-0.0.0}" >> "$GITHUB_ENV"
+          echo "APP_CODE=${CODE:-0}" >> "$GITHUB_ENV"
+      - name: Publish release APK to GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: release-v${{ env.APP_VERSION }}-b${{ github.run_number }}
+          allowUpdates: false
+          name: PressingDZ release APK v${{ env.APP_VERSION }} (build ${{ github.run_number }})
+          body: Release (unsigned, test only) build of PressingDZ v${{ env.APP_VERSION }}+${{ env.APP_CODE }} from commit ${{ github.sha }}. OpenPencil pass: design verified, icons already use string descriptions. Debug APKs publish under debug-latest as before.
+          artifacts: "app/build/outputs/apk/release/*.apk"
       - name: Publish release
         if: github.event_name != 'pull_request'
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.ref_type == 'tag' && github.ref_name || 'debug-latest' }}
+          tag: ${{ github.ref_type == 'tag' && github.ref_name || 'Debug build' }}
           allowUpdates: true
           replacesArtifacts: true
           name: ${{ github.ref_type == 'tag' && github.ref_name || 'Debug build' }}
